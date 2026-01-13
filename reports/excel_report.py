@@ -209,6 +209,94 @@ def build_monthly_report(df, vendors, start_month, end_month):
     for i, w in enumerate(widths, start=1):
         ws2.column_dimensions[get_column_letter(i)].width = w
 
+        # =========================
+    # 3️⃣ 시트 : 업체별 월매출
+    # =========================
+    ws3 = wb.create_sheet(title="업체별 월매출")
+
+    # -------------------------
+    # 제목
+    # -------------------------
+    ws3.merge_cells("A1:G1")
+    ws3["A1"] = "해외부 월별 업체 매출"
+    ws3["A1"].font = Font(bold=True, size=18)
+    ws3["A1"].alignment = center
+
+    ws3.merge_cells("A2:G2")
+    ws3["A2"] = f"업체: {', '.join(vendors)} | 기간: {start_month} ~ {end_month}"
+    ws3["A2"].alignment = center
+
+    ws3["A3"] = f"작성일: {today_str}"
+    ws3["A4"] = "담당자: 이수민"
+
+    current_row = 6
+
+    months = sorted(df["month"].unique())
+
+    # -------------------------
+    # 업체별 블록
+    # -------------------------
+    for vendor in vendors:
+        vendor_df = df[df["vendor"] == vendor]
+
+        # 업체 헤더
+        ws3.merge_cells(start_row=current_row, start_column=1,
+                        end_row=current_row, end_column=len(months) + 2)
+        ws3.cell(row=current_row, column=1, value=vendor)
+        ws3.cell(row=current_row, column=1).fill = header_fill
+        ws3.cell(row=current_row, column=1).font = header_font
+        ws3.cell(row=current_row, column=1).alignment = center
+
+        current_row += 1
+
+        # 월 헤더
+        headers = ["구분"] + months + ["합계"]
+        for col_idx, h in enumerate(headers, start=1):
+            c = ws3.cell(row=current_row, column=col_idx, value=h)
+            c.fill = header_fill
+            c.font = header_font
+            c.alignment = center
+            c.border = border
+
+        current_row += 1
+
+        metrics = [
+            ("매출액", "gross_sales"),
+            ("업체 수수료", "vendor_fee"),
+            ("실 입금액", "net_sales"),
+            ("운행건수", "ride_count"),
+        ]
+
+        for label, col in metrics:
+            ws3.cell(row=current_row, column=1, value=label)
+            ws3.cell(row=current_row, column=1).alignment = center
+            ws3.cell(row=current_row, column=1).border = border
+
+            row_sum = 0
+
+            for i, m in enumerate(months, start=2):
+                v = vendor_df[vendor_df["month"] == m][col].sum()
+                ws3.cell(row=current_row, column=i, value=v)
+                ws3.cell(row=current_row, column=i).border = border
+                ws3.cell(row=current_row, column=i).alignment = center
+                if col != "ride_count":
+                    ws3.cell(row=current_row, column=i).number_format = "#,##0"
+                row_sum += v
+
+            ws3.cell(row=current_row, column=len(months) + 2, value=row_sum)
+            ws3.cell(row=current_row, column=len(months) + 2).font = bold_font
+            ws3.cell(row=current_row, column=len(months) + 2).alignment = center
+            if col != "ride_count":
+                ws3.cell(row=current_row, column=len(months) + 2).number_format = "#,##0"
+
+            current_row += 1
+
+        current_row += 1  # 업체 간 여백
+
+    # 컬럼 너비
+    ws3.column_dimensions["A"].width = 18
+    for i in range(2, len(months) + 3):
+        ws3.column_dimensions[get_column_letter(i)].width = 18
 
 
     # =========================
