@@ -5,6 +5,8 @@ import pandas as pd
 from pathlib import Path
 import plotly.express as px
 from reports.excel_report import build_monthly_report
+import gspread
+from google.oauth2.service_account import Credentials
 
 
 # ==============================
@@ -78,12 +80,63 @@ st.markdown("""
 
 st.title("📊 Dashboard")
 
-# 데이터 존재 여부
-if not DATA_PATH.exists():
+# ==============================
+# Google Sheet 연결
+# ==============================
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+creds = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=SCOPES,
+)
+
+gc = gspread.authorize(creds)
+
+SPREADSHEET_ID = "1hFJB0D2L64m3h3pp7R5j9Bj0cZYinkM-dsA6twE1fZA"
+SHEET_NAME = "data"   # 실제 시트 이름
+
+sheet = gc.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+records = sheet.get_all_records()
+
+if not records:
     st.warning("아직 업로드된 정산 데이터가 없습니다.")
     st.stop()
 
-df = pd.read_parquet(DATA_PATH)
+df = pd.DataFrame(records)
+
+# ==============================
+# month 포맷 정규화 (🔥 핵심 🔥)
+# ==============================
+df["month"] = (
+    df["month"]
+    .astype(str)
+    .str.strip()
+    .str.replace(r"^(\d{4})-(\d)$", r"\1-0\2", regex=True)
+)
+
+# 정렬 (선택이지만 추천)
+df = df.sort_values("month")
+
+st.write("📌 DEBUG: Sheet rows", len(df))
+st.dataframe(df.head())
+
+
+
+NUMERIC_COLS = [
+    "gross_sales",
+    "vendor_fee",
+    "net_sales",
+    "ride_count",
+    "exchange_rate",
+]
+
+for col in NUMERIC_COLS:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
 
 # -----------------------------
 # 필터 영역

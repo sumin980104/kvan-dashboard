@@ -32,7 +32,6 @@ sheet = gc.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
 # =========================
 # 저장 경로
 # =========================
-DATA_PATH = Path("data/processed.parquet")
 
 st.title("📥 Data Upload")
 
