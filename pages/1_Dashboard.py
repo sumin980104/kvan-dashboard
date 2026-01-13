@@ -117,13 +117,14 @@ df["month"] = (
     .str.replace(r"^(\d{4})-(\d)$", r"\1-0\2", regex=True)
 )
 
-# 정렬 (선택이지만 추천)
+# 정렬 
 df = df.sort_values("month")
 
-st.write("📌 DEBUG: Sheet rows", len(df))
-st.dataframe(df.head())
+DEBUG = False # 개발용 토글로 숨기기
 
-
+if DEBUG:
+    st.write("📌 DEBUG: Sheet rows", len(df))
+    st.dataframe(df.head())
 
 NUMERIC_COLS = [
     "gross_sales",
