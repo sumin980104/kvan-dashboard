@@ -1,8 +1,33 @@
+# C:\Users\USER\Documents\개발 폴더\kvan-dashboard\pages\2_Data_Upload.py
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 
+import gspread
+from google.oauth2.service_account import Credentials
+
 from parsers.mk import parse_mk
+
+# =========================
+# Google Sheets 설정
+# =========================
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+creds = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=SCOPES,
+)
+
+gc = gspread.authorize(creds)
+
+# 👉 실제 사용할 스프레드시트 이름
+SPREADSHEET_NAME = "kvan-dashboard-data"
+SHEET_NAME = "data"
+
+sheet = gc.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
 
 # =========================
 # 저장 경로
@@ -277,16 +302,23 @@ if st.button("저장"):
     
 
     # ======================
-    # parquet 저장
-    # ======================
+# Google Sheets 저장
+# ======================
     new_df = pd.concat(results)
 
-    if DATA_PATH.exists():
-        old_df = pd.read_parquet(DATA_PATH)
-        new_df = pd.concat([old_df, new_df])
+# NaN → 빈 문자열 (Sheets 오류 방지)
+    new_df = new_df.fillna("")
 
-    DATA_PATH.parent.mkdir(exist_ok=True)
-    new_df.to_parquet(DATA_PATH, index=False)
+# DataFrame → list of lists
+    rows = new_df.values.tolist()
 
-    st.success("저장 완료")
+# 헤더가 비어 있으면 헤더 먼저 추가
+    if not sheet.get_all_values():
+        sheet.append_row(list(new_df.columns))
+
+# 데이터 append
+    sheet.append_rows(rows)
+
+    st.success("Google Sheets에 저장 완료")
     st.dataframe(new_df, use_container_width=True)
+
