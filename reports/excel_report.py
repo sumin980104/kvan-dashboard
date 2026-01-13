@@ -209,7 +209,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     for i, w in enumerate(widths, start=1):
         ws2.column_dimensions[get_column_letter(i)].width = w
 
-        # =========================
+    # =========================
     # 3️⃣ 시트 : 업체별 월매출
     # =========================
     ws3 = wb.create_sheet(title="업체별 월매출")
@@ -217,12 +217,12 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # -------------------------
     # 제목
     # -------------------------
-    ws3.merge_cells("A1:G1")
+    ws3.merge_cells("A1:L1")
     ws3["A1"] = "해외부 월별 업체 매출"
     ws3["A1"].font = Font(bold=True, size=18)
     ws3["A1"].alignment = center
 
-    ws3.merge_cells("A2:G2")
+    ws3.merge_cells("A2:L2")
     ws3["A2"] = f"업체: {', '.join(vendors)} | 기간: {start_month} ~ {end_month}"
     ws3["A2"].alignment = center
 
@@ -283,11 +283,16 @@ def build_monthly_report(df, vendors, start_month, end_month):
                     ws3.cell(row=current_row, column=i).number_format = "#,##0"
                 row_sum += v
 
-            ws3.cell(row=current_row, column=len(months) + 2, value=row_sum)
-            ws3.cell(row=current_row, column=len(months) + 2).font = bold_font
-            ws3.cell(row=current_row, column=len(months) + 2).alignment = center
+            total_col = len(months) + 2
+
+            cell = ws3.cell(row=current_row, column=total_col, value=row_sum)
+            cell.font = bold_font
+            cell.alignment = center
+            cell.border = border          
+
             if col != "ride_count":
-                ws3.cell(row=current_row, column=len(months) + 2).number_format = "#,##0"
+                cell.number_format = "#,##0"
+
 
             current_row += 1
 
