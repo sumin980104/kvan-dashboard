@@ -19,7 +19,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # =========================
     # 스타일 정의
     # =========================
-    header_fill = PatternFill("solid", fgColor="2F3A4A")  # 네이비
+    header_fill = PatternFill("solid", fgColor="1F2A44")  # 네이비
     header_font = Font(color="FFFFFF", bold=True)
     bold_font = Font(bold=True)
 
