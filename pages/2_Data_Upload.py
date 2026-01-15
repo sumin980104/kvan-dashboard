@@ -385,7 +385,8 @@ if vendor == "Linkro":
             "exchange_rate": 1,
             "net_sales": net_krw,
             "ride_count": ride,
-            "fx_date": fx_date,
+            "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+
         }
 
         results.append(pd.DataFrame([row]))
@@ -407,7 +408,8 @@ if vendor == "Linkro":
             "exchange_rate": exchange_rate,
             "net_sales": net_krw,
             "ride_count": ride,
-            "fx_date": fx_date,
+            "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+
         }
 
         results.append(pd.DataFrame([row]))
