@@ -128,28 +128,68 @@ if vendor == "Tripadvisor":
         key="tripadvisor_fixed"
     )
 # ==================================================
-# Kvanlimo 
+# Kvanlimo
 # ==================================================
 if vendor == "Kvanlimo":
     st.subheader("Kvanlimo 정산 입력")
-    st.caption("※ 고정 20행 / 빈 줄은 자동 무시됩니다.")
 
-    kvan_df = pd.DataFrame(
-        {
-            "환전일": [None] * 20,
-            "달러 매출액 (USD)": [None] * 20,
-            "수수료 (USD)": [None] * 20,
-            "환율": [None] * 20,
-            "운행 건수": [None] * 20,
-        }
+    currency_type = st.radio(
+        "입금 통화 선택",
+        ["USD (달러)", "KRW (원화)"],
+        horizontal=True
     )
 
-    edited_kvan_df = st.data_editor(
-        kvan_df,
-        num_rows="fixed",
-        use_container_width=True,
-        key="kvanlimo_fixed"
-    )
+    # ---------------------------
+    # USD (기존 방식: 표 입력)
+    # ---------------------------
+    if currency_type == "USD (달러)":
+        st.caption("※ 고정 20행 / 빈 줄은 자동 무시됩니다.")
+
+        kvan_df = pd.DataFrame(
+            {
+                "환전일": [None] * 20,
+                "달러 매출액 (USD)": [None] * 20,
+                "수수료 (USD)": [None] * 20,
+                "환율": [None] * 20,
+                "운행 건수": [None] * 20,
+            }
+        )
+
+        edited_kvan_df = st.data_editor(
+            kvan_df,
+            num_rows="fixed",
+            use_container_width=True,
+            key="kvanlimo_fixed"
+        )
+
+    # ---------------------------
+    # KRW (Linkro 방식: 단건 입력)
+    # ---------------------------
+    else:
+        fx_date = st.text_input(
+            "환전일 / 결제일",
+            placeholder="예: 2026-01-15"
+        )
+
+        gross_krw = st.number_input(
+            "매출액 (KRW)",
+            min_value=0,
+            step=1000
+        )
+
+        fee_krw = st.number_input(
+            "수수료 (KRW, 미입력 시 0)",
+            min_value=0,
+            step=1000
+        )
+
+        ride_count = st.number_input(
+            "운행 건수 (미입력 시 1)",
+            min_value=0,
+            step=1,
+            value=1
+        )
+
 # ==================================================
 # Linkro (통화 선택 수동 입력)
 # ==================================================
@@ -162,7 +202,11 @@ if vendor == "Linkro":
         horizontal=True
     )
 
-    fx_date = st.date_input("환전일 / 결제일")
+    fx_date = st.text_input(
+        "환전일 / 결제일",
+        placeholder="예: 2026-01-15"
+    )
+
 
     # ---------------------------
     # KRW 입금
@@ -318,45 +362,73 @@ if st.button("저장"):
 
         results.append(pd.DataFrame(rows))
 
-        # ----------------------
-    # Kvanlimo 처리 (고정 20행)
+    # ----------------------
+    # Kvanlimo 저장
     # ----------------------
     if vendor == "Kvanlimo":
 
-        rows = []
+        # ----------------------
+        # KRW (단건 입력)
+        # ----------------------
+        if currency_type == "KRW (원화)":
+            ride = ride_count if ride_count > 0 else 1
+            fee = fee_krw if fee_krw else 0
+            net_krw = gross_krw - fee
 
-        for _, r in edited_kvan_df.iterrows():
-            usd = pd.to_numeric(r["달러 매출액 (USD)"], errors="coerce")
-            fee_usd = pd.to_numeric(r["수수료 (USD)"], errors="coerce")
-            rate = pd.to_numeric(r["환율"], errors="coerce")
-            ride = pd.to_numeric(r["운행 건수"], errors="coerce") or 0
-
-            # 빈 줄 무시
-            if pd.isna(usd) or pd.isna(rate) or pd.isna(fee_usd):
-                continue
-
-            gross_krw = usd * rate
-            fee_krw = fee_usd * rate
-            net_krw = gross_krw - fee_krw
-
-            rows.append({
+            row = {
                 "month": month,
                 "vendor": "Kvanlimo",
-                "currency": "USD",
+                "currency": "KRW",
                 "gross_sales": gross_krw,
-                "vendor_fee": fee_krw,
+                "vendor_fee": fee,
                 "fx_fee": 0,
-                "exchange_rate": rate,
+                "exchange_rate": 1,
                 "net_sales": net_krw,
                 "ride_count": ride,
-                "fx_date": r["환전일"],
-            })
+                "fx_date": fx_date or "",
+            }
 
-        if not rows:
-            st.warning("입력된 Kvanlimo 데이터가 없습니다.")
-            st.stop()
+            results.append(pd.DataFrame([row]))
 
-        results.append(pd.DataFrame(rows))
+        # ----------------------
+        # USD (표 입력)
+        # ----------------------
+        else:
+            rows = []
+
+            for _, r in edited_kvan_df.iterrows():
+                usd = pd.to_numeric(r["달러 매출액 (USD)"], errors="coerce")
+                fee_usd = pd.to_numeric(r["수수료 (USD)"], errors="coerce") or 0
+                rate = pd.to_numeric(r["환율"], errors="coerce")
+                ride = pd.to_numeric(r["운행 건수"], errors="coerce") or 1
+
+                # 빈 줄 무시
+                if pd.isna(usd) or pd.isna(rate):
+                    continue
+
+                gross_krw = usd * rate
+                fee_krw = fee_usd * rate
+                net_krw = gross_krw - fee_krw
+
+                rows.append({
+                    "month": month,
+                    "vendor": "Kvanlimo",
+                    "currency": "USD",
+                    "gross_sales": gross_krw,
+                    "vendor_fee": fee_krw,
+                    "fx_fee": 0,
+                    "exchange_rate": rate,
+                    "net_sales": net_krw,
+                    "ride_count": ride,
+                    "fx_date": r["환전일"],
+                })
+
+            if not rows:
+                st.warning("입력된 Kvanlimo USD 데이터가 없습니다.")
+                st.stop()
+
+            results.append(pd.DataFrame(rows))
+
 
     # ----------------------
     # Linkro 저장
@@ -382,7 +454,8 @@ if st.button("저장"):
                 "exchange_rate": 1,
                 "net_sales": net_krw,
                 "ride_count": ride,
-                "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+                "fx_date": fx_date or "",
+
             }
 
             results.append(pd.DataFrame([row]))
@@ -417,7 +490,8 @@ if st.button("저장"):
                     "exchange_rate": rate,
                     "net_sales": net_krw,
                     "ride_count": ride,
-                    "fx_date": r["환전일"],
+                    "fx_date": fx_date or "",
+
                 })
 
             if not rows:
