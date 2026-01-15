@@ -40,7 +40,7 @@ st.title("📥 Data Upload")
 # =========================
 vendor = st.selectbox(
     "업체 선택",
-    ["MK", "Klook", "Mozio", "Tripadvisor", "Kvanlimo"]
+    ["MK", "Klook", "Mozio", "Tripadvisor", "Kvanlimo", "Linkro"]
 )
 
 # =========================
