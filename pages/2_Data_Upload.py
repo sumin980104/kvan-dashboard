@@ -188,33 +188,28 @@ if vendor == "Linkro":
         )
 
     # ---------------------------
-    # USD 입금
-    # ---------------------------
+# USD 입금 (Kvanlimo 스타일)
+# ---------------------------
     else:
-        gross_usd = st.number_input(
-            "매출액 (USD)",
-            min_value=0.0,
-            step=10.0
+        st.caption("※ 고정 10행 / 빈 줄은 자동 무시됩니다.")
+
+        linkro_df = pd.DataFrame(
+            {
+                "환전일": [None] * 10,
+                "달러 매출액 (USD)": [None] * 10,
+                "수수료 (USD)": [None] * 10,
+                "환율": [None] * 10,
+                "운행 건수": [None] * 10,
+            }
         )
 
-        fee_usd = st.number_input(
-            "수수료 (USD, 미입력 시 0)",
-            min_value=0.0,
-            step=1.0
+        edited_linkro_df = st.data_editor(
+            linkro_df,
+            num_rows="fixed",
+            use_container_width=True,
+            key="linkro_usd_fixed"
         )
 
-        exchange_rate = st.number_input(
-            "적용 환율",
-            min_value=0.0,
-            value=1350.0
-        )
-
-        ride_count = st.number_input(
-            "운행 건수 (미입력 시 1)",
-            min_value=0,
-            step=1,
-            value=1
-        )
 
 
 # =========================
@@ -368,10 +363,12 @@ if st.button("저장"):
     # ----------------------
     if vendor == "Linkro":
 
-        # 기본값 보정
-        ride = ride_count if ride_count > 0 else 1
-
+        # ----------------------
+        # KRW (단건 입력) — 기존 유지
+        # ----------------------
         if currency_type == "KRW (원화)":
+
+            ride = ride_count if ride_count > 0 else 1
             fee = fee_krw if fee_krw else 0
             net_krw = gross_krw - fee
 
@@ -390,28 +387,44 @@ if st.button("저장"):
 
             results.append(pd.DataFrame([row]))
 
+        # ----------------------
+        # USD (표 입력 – Kvanlimo 스타일)
+        # ----------------------
         else:
-            fee = fee_usd if fee_usd else 0
-            gross_krw = gross_usd * exchange_rate
-            fee_krw = fee * exchange_rate
-            net_krw = gross_krw - fee_krw
+            rows = []
 
-            row = {
-                "month": month,
-                "vendor": "Linkro",
-                "currency": "USD",
-                "gross_sales": gross_krw,
-                "vendor_fee": fee_krw,
-                "fx_fee": 0,
-                "exchange_rate": exchange_rate,
-                "net_sales": net_krw,
-                "ride_count": ride,
-                "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
-            }
+            for _, r in edited_linkro_df.iterrows():
+                usd = pd.to_numeric(r["달러 매출액 (USD)"], errors="coerce")
+                fee_usd = pd.to_numeric(r["수수료 (USD)"], errors="coerce") or 0
+                rate = pd.to_numeric(r["환율"], errors="coerce")
+                ride = pd.to_numeric(r["운행 건수"], errors="coerce") or 1
 
-            results.append(pd.DataFrame([row]))
+                # 빈 줄 무시
+                if pd.isna(usd) or pd.isna(rate):
+                    continue
 
- 
+                gross_krw = usd * rate
+                fee_krw = fee_usd * rate
+                net_krw = gross_krw - fee_krw
+
+                rows.append({
+                    "month": month,
+                    "vendor": "Linkro",
+                    "currency": "USD",
+                    "gross_sales": gross_krw,
+                    "vendor_fee": fee_krw,
+                    "fx_fee": 0,
+                    "exchange_rate": rate,
+                    "net_sales": net_krw,
+                    "ride_count": ride,
+                    "fx_date": r["환전일"],
+                })
+
+            if not rows:
+                st.warning("입력된 Linkro USD 데이터가 없습니다.")
+                st.stop()
+
+            results.append(pd.DataFrame(rows))
 
     # ======================
 # Google Sheets 저장
