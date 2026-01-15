@@ -364,57 +364,54 @@ if st.button("저장"):
         results.append(pd.DataFrame(rows))
 
     # ----------------------
-# Linkro 저장
-# ----------------------
-if vendor == "Linkro":
+    # Linkro 저장
+    # ----------------------
+    if vendor == "Linkro":
 
-    # 기본값 보정
-    ride = ride_count if ride_count > 0 else 1
+        # 기본값 보정
+        ride = ride_count if ride_count > 0 else 1
 
-    if currency_type == "KRW (원화)":
-        fee = fee_krw if fee_krw else 0
-        net_krw = gross_krw - fee
+        if currency_type == "KRW (원화)":
+            fee = fee_krw if fee_krw else 0
+            net_krw = gross_krw - fee
 
-        row = {
-            "month": month,
-            "vendor": "Linkro",
-            "currency": "KRW",
-            "gross_sales": gross_krw,
-            "vendor_fee": fee,
-            "fx_fee": 0,
-            "exchange_rate": 1,
-            "net_sales": net_krw,
-            "ride_count": ride,
-            "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+            row = {
+                "month": month,
+                "vendor": "Linkro",
+                "currency": "KRW",
+                "gross_sales": gross_krw,
+                "vendor_fee": fee,
+                "fx_fee": 0,
+                "exchange_rate": 1,
+                "net_sales": net_krw,
+                "ride_count": ride,
+                "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+            }
 
-        }
+            results.append(pd.DataFrame([row]))
 
-        results.append(pd.DataFrame([row]))
+        else:
+            fee = fee_usd if fee_usd else 0
+            gross_krw = gross_usd * exchange_rate
+            fee_krw = fee * exchange_rate
+            net_krw = gross_krw - fee_krw
 
-    else:
-        fee = fee_usd if fee_usd else 0
+            row = {
+                "month": month,
+                "vendor": "Linkro",
+                "currency": "USD",
+                "gross_sales": gross_krw,
+                "vendor_fee": fee_krw,
+                "fx_fee": 0,
+                "exchange_rate": exchange_rate,
+                "net_sales": net_krw,
+                "ride_count": ride,
+                "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
+            }
 
-        gross_krw = gross_usd * exchange_rate
-        fee_krw = fee * exchange_rate
-        net_krw = gross_krw - fee_krw
+            results.append(pd.DataFrame([row]))
 
-        row = {
-            "month": month,
-            "vendor": "Linkro",
-            "currency": "USD",
-            "gross_sales": gross_krw,
-            "vendor_fee": fee_krw,
-            "fx_fee": 0,
-            "exchange_rate": exchange_rate,
-            "net_sales": net_krw,
-            "ride_count": ride,
-            "fx_date": fx_date.strftime("%Y-%m-%d") if fx_date else "",
-
-        }
-
-        results.append(pd.DataFrame([row]))
-
-    
+ 
 
     # ======================
 # Google Sheets 저장
