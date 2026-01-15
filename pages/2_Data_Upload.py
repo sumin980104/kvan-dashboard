@@ -150,6 +150,71 @@ if vendor == "Kvanlimo":
         use_container_width=True,
         key="kvanlimo_fixed"
     )
+# ==================================================
+# Linkro (통화 선택 수동 입력)
+# ==================================================
+if vendor == "Linkro":
+    st.subheader("Linkro 정산 입력")
+
+    currency_type = st.radio(
+        "입금 통화 선택",
+        ["KRW (원화)", "USD (달러)"],
+        horizontal=True
+    )
+
+    fx_date = st.date_input("환전일 / 결제일")
+
+    # ---------------------------
+    # KRW 입금
+    # ---------------------------
+    if currency_type == "KRW (원화)":
+        gross_krw = st.number_input(
+            "매출액 (KRW)",
+            min_value=0,
+            step=1000
+        )
+
+        fee_krw = st.number_input(
+            "수수료 (KRW, 미입력 시 0)",
+            min_value=0,
+            step=1000
+        )
+
+        ride_count = st.number_input(
+            "운행 건수 (미입력 시 1)",
+            min_value=0,
+            step=1,
+            value=1
+        )
+
+    # ---------------------------
+    # USD 입금
+    # ---------------------------
+    else:
+        gross_usd = st.number_input(
+            "매출액 (USD)",
+            min_value=0.0,
+            step=10.0
+        )
+
+        fee_usd = st.number_input(
+            "수수료 (USD, 미입력 시 0)",
+            min_value=0.0,
+            step=1.0
+        )
+
+        exchange_rate = st.number_input(
+            "적용 환율",
+            min_value=0.0,
+            value=1350.0
+        )
+
+        ride_count = st.number_input(
+            "운행 건수 (미입력 시 1)",
+            min_value=0,
+            step=1,
+            value=1
+        )
 
 
 # =========================
@@ -297,6 +362,55 @@ if st.button("저장"):
             st.stop()
 
         results.append(pd.DataFrame(rows))
+
+    # ----------------------
+# Linkro 저장
+# ----------------------
+if vendor == "Linkro":
+
+    # 기본값 보정
+    ride = ride_count if ride_count > 0 else 1
+
+    if currency_type == "KRW (원화)":
+        fee = fee_krw if fee_krw else 0
+        net_krw = gross_krw - fee
+
+        row = {
+            "month": month,
+            "vendor": "Linkro",
+            "currency": "KRW",
+            "gross_sales": gross_krw,
+            "vendor_fee": fee,
+            "fx_fee": 0,
+            "exchange_rate": 1,
+            "net_sales": net_krw,
+            "ride_count": ride,
+            "fx_date": fx_date,
+        }
+
+        results.append(pd.DataFrame([row]))
+
+    else:
+        fee = fee_usd if fee_usd else 0
+
+        gross_krw = gross_usd * exchange_rate
+        fee_krw = fee * exchange_rate
+        net_krw = gross_krw - fee_krw
+
+        row = {
+            "month": month,
+            "vendor": "Linkro",
+            "currency": "USD",
+            "gross_sales": gross_krw,
+            "vendor_fee": fee_krw,
+            "fx_fee": 0,
+            "exchange_rate": exchange_rate,
+            "net_sales": net_krw,
+            "ride_count": ride,
+            "fx_date": fx_date,
+        }
+
+        results.append(pd.DataFrame([row]))
 
     
 
