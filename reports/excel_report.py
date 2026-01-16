@@ -78,9 +78,9 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.merge_cells(f"{col}5:{col}6")
         t = ws[f"{col}5"]
         t.value = title
-        t.font = Font(bold=True, size=12)
+        t.font = header_font(bold=True, size=12)
         t.alignment = center
-        t.fill = PatternFill("solid", fgColor=GRAY_BG)
+        t.fill = PatternFill("solid", fgColor=NAVY)
         t.border = soft_border
 
         # ── 값 영역
@@ -187,7 +187,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     line.dataLabels = DataLabelList()
     line.dataLabels.showVal = True
-    line.dataLabels.showCatName = True
+    line.dataLabels.showCatName = False
     line.dataLabels.showSerName = False
 
     for s in line.series:
