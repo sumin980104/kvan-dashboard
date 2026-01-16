@@ -468,11 +468,16 @@ if st.button("저장"):
 
             for _, r in edited_linkro_df.iterrows():
                 usd = pd.to_numeric(r["달러 매출액 (USD)"], errors="coerce")
-                fee_usd = pd.to_numeric(r["수수료 (USD)"], errors="coerce") or 0
                 rate = pd.to_numeric(r["환율"], errors="coerce")
-                ride = pd.to_numeric(r["운행 건수"], errors="coerce") or 1
 
-                # 빈 줄 무시
+                # 🔥 기본값 보장
+                fee_usd = pd.to_numeric(r["수수료 (USD)"], errors="coerce")
+                fee_usd = 0 if pd.isna(fee_usd) else fee_usd
+
+                ride = pd.to_numeric(r["운행 건수"], errors="coerce")
+                ride = 1 if pd.isna(ride) or ride <= 0 else int(ride)
+
+                # 필수값 체크
                 if pd.isna(usd) or pd.isna(rate):
                     continue
 
@@ -484,14 +489,13 @@ if st.button("저장"):
                     "month": month,
                     "vendor": "Linkro",
                     "currency": "USD",
-                    "gross_sales": gross_krw,
-                    "vendor_fee": fee_krw,
+                    "gross_sales": gross_krw,      # ✅ 매출액
+                    "vendor_fee": fee_krw,         # ✅ 수수료
                     "fx_fee": 0,
                     "exchange_rate": rate,
-                    "net_sales": net_krw,
-                    "ride_count": ride,
+                    "net_sales": net_krw,          # ✅ 실입금액 (확실히 들어감)
+                    "ride_count": ride,            # ✅ 최소 1
                     "fx_date": fx_date or "",
-
                 })
 
             if not rows:
@@ -499,6 +503,7 @@ if st.button("저장"):
                 st.stop()
 
             results.append(pd.DataFrame(rows))
+
 
     # ======================
 # Google Sheets 저장
