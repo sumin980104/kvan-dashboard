@@ -129,86 +129,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
     for col, width in COLUMN_WIDTHS.items():
         ws.column_dimensions[col].width = width
 
-    # =========================
-    # 2️⃣ 시트 2 : 월 통합 매출 
-    # =========================
-    ws2 = wb.create_sheet(title="월 통합 매출")
-
-    # 제목
-    ws2.merge_cells("A1:E1")
-    ws2["A1"] = "해외부 월 통합 매출"
-    ws2["A1"].font = Font(bold=True, size=18)
-    ws2["A1"].alignment = center
-
-    ws2.merge_cells("A2:E2")
-    ws2["A2"] = f"기간: {start_month} ~ {end_month}"
-    ws2["A2"].alignment = center
-
-    # 헤더
-    headers = ["월", "매출액", "업체 수수료", "실 입금액", "운행 건수"]
-    ws2.append([])
-    ws2.append(headers)
-
-    header_row = ws2.max_row
-    for col_idx in range(1, 6):
-        cell = ws2.cell(row=header_row, column=col_idx)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = center
-        cell.border = border
-
-    # 🔥 월 통합 데이터
-    monthly_total = (
-        df.groupby("month", as_index=False)
-        .agg(
-            gross_sales=("gross_sales", "sum"),
-            vendor_fee=("vendor_fee", "sum"),
-            net_sales=("net_sales", "sum"),
-            ride_count=("ride_count", "sum"),
-        )
-        .sort_values("month")
-    )
-
-    for _, r in monthly_total.iterrows():
-        ws2.append([
-            r["month"],
-            r["gross_sales"],
-            r["vendor_fee"],
-            r["net_sales"],
-            r["ride_count"],
-        ])
-
-        row_idx = ws2.max_row
-        for col_idx in range(1, 6):
-            cell = ws2.cell(row=row_idx, column=col_idx)
-            cell.border = border
-            cell.alignment = center
-            if col_idx >= 2:
-                cell.number_format = "#,##0"
-
-    # 합계
-    ws2.append([
-        "합계",
-        monthly_total["gross_sales"].sum(),
-        monthly_total["vendor_fee"].sum(),
-        monthly_total["net_sales"].sum(),
-        monthly_total["ride_count"].sum(),
-    ])
-
-    total_row = ws2.max_row
-    for col_idx in range(1, 6):
-        cell = ws2.cell(row=total_row, column=col_idx)
-        cell.font = bold_font
-        cell.border = border
-        cell.alignment = center
-        if col_idx >= 2:
-            cell.number_format = "#,##0"
-
-        # 컬럼 너비
-    widths = [20, 25, 25, 25, 20]
-    for i, w in enumerate(widths, start=1):
-        ws2.column_dimensions[get_column_letter(i)].width = w
-
     # =========================================================
     # 3️⃣ 시트 : 업체별 월매출 (🔥 완전 수정 🔥)
     # =========================================================
@@ -289,6 +209,48 @@ def build_monthly_report(df, vendors, start_month, end_month):
         c.border = border
 
         current_row += 1  # 업체 간 여백
+
+    # =========================
+    # 🔥 총계 블록 (모든 업체 합산)
+    # =========================
+    total_start_row = current_row
+
+    for label, col in metrics:
+        ws3.cell(row=current_row, column=2, value=label).alignment = center
+        ws3.cell(row=current_row, column=2).border = border
+
+        row_sum = 0
+        for i, m in enumerate(months, start=3):
+            v = df[df["month"] == m][col].sum()
+            c = ws3.cell(row=current_row, column=i, value=v)
+            c.border = border
+            c.alignment = center
+            if col != "ride_count":
+                c.number_format = "#,##0"
+            row_sum += v
+
+        total_col = len(months) + 3
+        c = ws3.cell(row=current_row, column=total_col, value=row_sum)
+        c.font = bold_font
+        c.border = border
+        c.alignment = center
+        if col != "ride_count":
+            c.number_format = "#,##0"
+
+        current_row += 1
+
+    ws3.merge_cells(
+        start_row=total_start_row,
+        start_column=1,
+        end_row=current_row - 1,
+        end_column=1
+    )
+    c = ws3.cell(row=total_start_row, column=1, value="총계")
+    c.fill = header_fill
+    c.font = header_font
+    c.alignment = center
+    c.border = border
+
 
     # 컬럼 너비
     ws3.column_dimensions["A"].width = 14
