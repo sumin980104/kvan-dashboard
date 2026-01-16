@@ -25,7 +25,19 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     header_fill = PatternFill("solid", fgColor=NAVY)
     header_font = Font(color=WHITE, bold=True, size=12)
+    # 1. 폰트 설정
+    header_font = Font(color=WHITE, bold=True, size=12)
+    bold_font = Font(bold=True)           # 👈 에러 원인 해결: 두 번째 시트에서 사용
+    title_font = Font(bold=True, size=24, color=NAVY)
+    
+    # 2. 채우기 설정
+    header_fill = PatternFill("solid", fgColor=NAVY)
+    bg_fill = PatternFill("solid", fgColor=LIGHT_GRAY)
+    white_fill = PatternFill("solid", fgColor=WHITE)
+
+    # 3. 정렬 설정
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align = Alignment(horizontal="left", vertical="center")
     # -------------------------------------------------------
     # 테두리 설정 (이름을 두 개 다 정의하여 에러 방지)
     # -------------------------------------------------------
