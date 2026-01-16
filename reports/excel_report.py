@@ -172,7 +172,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
         c.fill = header_fill
         c.font = header_font
         c.alignment = center
-        c.border = border
+        c.border = soft_border
+
 
     current_row += 1
 
@@ -189,13 +190,14 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
         for label, col in metrics:
             ws3.cell(row=current_row, column=2, value=label).alignment = center
-            ws3.cell(row=current_row, column=2).border = border
+            ws3.cell(row=current_row, column=2).border = soft_border
+
 
             row_sum = 0
             for i, m in enumerate(months, start=3):
                 v = vendor_df[vendor_df["month"] == m][col].sum()
                 c = ws3.cell(row=current_row, column=i, value=v)
-                c.border = border
+                c.border = soft_border
                 c.alignment = center
                 if col != "ride_count":
                     c.number_format = "#,##0"
@@ -204,7 +206,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
             total_col = len(months) + 3
             c = ws3.cell(row=current_row, column=total_col, value=row_sum)
             c.font = bold_font
-            c.border = border
+            c.border = soft_border
             c.alignment = center
             if col != "ride_count":
                 c.number_format = "#,##0"
@@ -222,7 +224,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
         c.fill = header_fill
         c.font = header_font
         c.alignment = center
-        c.border = border
+        c.border = soft_border
 
         current_row += 1  # 업체 간 여백
 
@@ -233,13 +235,14 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     for label, col in metrics:
         ws3.cell(row=current_row, column=2, value=label).alignment = center
-        ws3.cell(row=current_row, column=2).border = border
+        ws3.cell(row=current_row, column=2).border = soft_border
+
 
         row_sum = 0
         for i, m in enumerate(months, start=3):
             v = df[df["month"] == m][col].sum()
             c = ws3.cell(row=current_row, column=i, value=v)
-            c.border = border
+            c.border = soft_border
             c.alignment = center
             if col != "ride_count":
                 c.number_format = "#,##0"
@@ -248,7 +251,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
         total_col = len(months) + 3
         c = ws3.cell(row=current_row, column=total_col, value=row_sum)
         c.font = bold_font
-        c.border = border
+        c.border = soft_border
         c.alignment = center
         if col != "ride_count":
             c.number_format = "#,##0"
@@ -265,7 +268,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     c.fill = header_fill
     c.font = header_font
     c.alignment = center
-    c.border = border
+    c.border = soft_border
+
 
 
     # 컬럼 너비
