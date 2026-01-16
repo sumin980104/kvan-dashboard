@@ -23,7 +23,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     WHITE = "FFFFFF"
     BORDER_GRAY = "D1D5DB"
 
-    bold = Font(bold=True)
+    bold_font = Font(bold=True)
     center = Alignment(horizontal="center", vertical="center")
 
     thin = Side(style="thin", color=BORDER_GRAY)
