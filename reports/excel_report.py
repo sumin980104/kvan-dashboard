@@ -126,13 +126,18 @@ def build_monthly_report(df, vendors, start_month, end_month):
     bar.width = 18
     bar.height = 8
 
+    # 🔹 데이터 추가 (제목 절대 포함 X)
     bar.add_data(data, titles_from_data=False)
+
+    # 🔹 카테고리 = 업체명 → 자동으로 X축(막대 아래)
     bar.set_categories(cats)
 
+    # 🔹 데이터 라벨 설정
     bar.dataLabels = DataLabelList()
-    bar.dataLabels.showVal = True
-
-    ws.add_chart(bar, "A13")
+    bar.dataLabels.showVal = True        # 숫자만
+    bar.dataLabels.showCatName = False   # 업체명 ❌
+    bar.dataLabels.showSerName = False   # 계열1 ❌
+    bar.dataLabels.showLegendKey = False
 
     # -------------------------
     # Pie Chart (업체명 + % + 값)
@@ -140,20 +145,20 @@ def build_monthly_report(df, vendors, start_month, end_month):
     pie = PieChart()
     pie.width = 18
     pie.height = 8
+    pie.legend = None
 
     pie.add_data(data, titles_from_data=False)
     pie.set_categories(cats)
 
     pie.dataLabels = DataLabelList()
-    pie.dataLabels.showCatName = True
-    pie.dataLabels.showPercent = True
-    pie.dataLabels.showVal = True
-    pie.dataLabels.showLeaderLines = True
+    pie.dataLabels.showCatName = True    # 업체명
+    pie.dataLabels.showPercent = True    # %
+    pie.dataLabels.showVal = True        # 값
+    pie.dataLabels.showSerName = False   # 계열1 ❌
 
-    ws.add_chart(pie, "E13")
 
     # =========================================================
-    # 월별 매출 추이 (혼자 크게)
+    # 월별 매출 추이 
     # =========================================================
     ws.merge_cells("A29:H29")
     ws["A29"] = "월별 매출 추이"
@@ -189,6 +194,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     line.dataLabels = DataLabelList()
     line.dataLabels.showVal = True
+    line.dataLabels.showCatName = False
+    line.dataLabels.showSerName = False
 
     for s in line.series:
         s.marker = Marker(symbol="circle", size=7)
