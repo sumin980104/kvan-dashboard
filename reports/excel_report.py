@@ -130,7 +130,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     bar.dataLabels.showCatName = False
     bar.dataLabels.showSerName = False
 
-    ws.add_chart(bar, "A13")
+    ws.add_chart(bar, "A12")
 
     # =========================================================
     # Donut Chart
@@ -150,7 +150,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     pie.dataLabels.showVal = False
     pie.dataLabels.showSerName = False
 
-    ws.add_chart(pie, "E13")
+    ws.add_chart(pie, "E12")
 
     # =========================================================
     # 월별 매출 추이
@@ -193,11 +193,17 @@ def build_monthly_report(df, vendors, start_month, end_month):
     for s in line.series:
         s.marker = Marker(symbol="circle", size=7)
 
-    ws.add_chart(line, "A31")
+    ws.add_chart(line, "A30")
 
-    # 컬럼 너비
-    for c in ["A","B","C","D","E","F","G","H"]:
-        ws.column_dimensions[c].width = 22
+    # KPI 및 레이아웃 컬럼 너비 고정
+    COLUMN_WIDTHS = {
+        "A": 26, "C": 26, "E": 26, "G": 26,   # KPI
+        "B": 18, "D": 18, "F": 18             # 간격
+    }
+
+    for col, width in COLUMN_WIDTHS.items():
+        ws.column_dimensions[col].width = width
+
 
     # =========================================================
     # 3️⃣ 시트 : 업체별 월매출 (🔥 완전 수정 🔥)
