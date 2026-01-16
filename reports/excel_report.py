@@ -28,8 +28,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     thin = Side(style="thin")
     soft_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # =========================================================
-    # 1️⃣ Dashboard 시트 (대표님 보고용)
+   # =========================================================
+    # 1️⃣ Dashboard 시트 (대표님 보고용 리디자인)
     # =========================================================
     ws = wb.active
     ws.title = "Dashboard"
@@ -37,62 +37,62 @@ def build_monthly_report(df, vendors, start_month, end_month):
     NAVY = "1F2A44"
     GRAY = "F3F4F6"
 
-    ws.merge_cells("A1:H1")
+    # -------------------------
+    # 제목
+    # -------------------------
+    ws.merge_cells("A1:H2")
     ws["A1"] = "해외부 매출 Dashboard"
     ws["A1"].font = Font(bold=True, size=22)
     ws["A1"].alignment = center
 
-    ws.merge_cells("A2:H2")
-    ws["A2"] = f"기간: {start_month} ~ {end_month}"
-    ws["A2"].alignment = center
-    ws["A2"].font = Font(size=12, color="555555")
+    ws.merge_cells("A3:H3")
+    ws["A3"] = f"기간: {start_month} ~ {end_month}"
+    ws["A3"].alignment = center
+    ws["A3"].font = Font(size=12, color="666666")
 
-    # =========================
+    # -------------------------
     # KPI 계산
-    # =========================
+    # -------------------------
     total_gross = df["gross_sales"].sum()
     total_net = df["net_sales"].sum()
     total_fee = df["vendor_fee"].sum()
     total_rides = int(df["ride_count"].sum())
-    avg_unit = total_gross / total_rides if total_rides else 0
 
-    kpi_cards = [
+    kpis = [
         ("총 매출액", f"{total_gross:,.0f} 원"),
         ("실 입금액", f"{total_net:,.0f} 원"),
         ("총 수수료", f"{total_fee:,.0f} 원"),
         ("운행 건수", f"{total_rides:,} 건"),
     ]
 
-    positions = [("A4", "C6"), ("D4", "F6"), ("A7", "C9"), ("D7", "F9")]
+    kpi_cols = ["A", "C", "E", "G"]
 
-    for (title, value), (start, end) in zip(kpi_cards, positions):
-        ws.merge_cells(f"{start}:{end}")
-        cell = ws[start]
-        cell.value = f"{title}\n{value}"
-        cell.alignment = Alignment(
-            horizontal="center",
-            vertical="center",
-            wrap_text=True
-        )
-        cell.font = Font(bold=True, size=14)
+    for i, (title, value) in enumerate(kpis):
+        col = kpi_cols[i]
+
+        # 카드 전체
+        ws.merge_cells(f"{col}5:{col}9")
+        cell = ws[f"{col}5"]
         cell.fill = PatternFill("solid", fgColor=GRAY)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    # =========================
-    # 평균 건당 매출 (강조 카드)
-    # =========================
-    ws.merge_cells("G4:H9")
-    c = ws["G4"]
-    c.value = f"평균 건당 매출\n{avg_unit:,.0f} 원"
-    c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    c.font = Font(bold=True, size=16, color="FFFFFF")
-    c.fill = PatternFill("solid", fgColor=NAVY)
+        cell.value = f"{title}\n\n{value}"
+        cell.font = Font(bold=True, size=15)
 
-    # =========================
+    # -------------------------
+    # 섹션 타이틀 : 업체 분석
+    # -------------------------
+    ws.merge_cells("A11:H11")
+    ws["A11"] = "📊 업체별 매출 분석"
+    ws["A11"].font = Font(bold=True, size=14)
+    ws["A11"].alignment = Alignment(horizontal="left", vertical="center")
+
+    # -------------------------
     # 업체별 매출 집계 (차트용)
-    # =========================
-    table_row = 11
-    ws.cell(row=table_row, column=1, value="업체").font = bold_font
-    ws.cell(row=table_row, column=2, value="매출액").font = bold_font
+    # -------------------------
+    table_row = 12
+    ws.cell(row=table_row, column=1, value="업체")
+    ws.cell(row=table_row, column=2, value="매출액")
 
     vendor_total = (
         df.groupby("vendor", as_index=False)
@@ -105,14 +105,14 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
         r += 1
 
-    # =========================
-    # 업체별 매출 Bar Chart
-    # =========================
+    # -------------------------
+    # Bar Chart
+    # -------------------------
     bar = BarChart()
     bar.title = "업체별 매출 비교"
-    bar.style = 10
     bar.legend = None
     bar.y_axis.majorGridlines = None
+    bar.style = 10
 
     data = Reference(ws, min_col=2, min_row=table_row,
                     max_row=table_row + len(vendor_total))
@@ -122,14 +122,32 @@ def build_monthly_report(df, vendors, start_month, end_month):
     bar.add_data(data, titles_from_data=True)
     bar.set_categories(cats)
 
-    ws.add_chart(bar, "A11")
+    ws.add_chart(bar, "A13")
 
-    # =========================
-    # 월별 매출 추이 Line Chart
-    # =========================
-    line_row = table_row + len(vendor_total) + 3
-    ws.cell(row=line_row, column=1, value="월").font = bold_font
-    ws.cell(row=line_row, column=2, value="총 매출액").font = bold_font
+    # -------------------------
+    # Pie Chart
+    # -------------------------
+    pie = PieChart()
+    pie.title = "업체별 매출 비중"
+    pie.add_data(data, titles_from_data=True)
+    pie.set_categories(cats)
+
+    ws.add_chart(pie, "E13")
+
+    # -------------------------
+    # 섹션 타이틀 : 월별 추이
+    # -------------------------
+    ws.merge_cells("A29:H29")
+    ws["A29"] = "📈 월별 매출 추이"
+    ws["A29"].font = Font(bold=True, size=14)
+    ws["A29"].alignment = Alignment(horizontal="left", vertical="center")
+
+    # -------------------------
+    # 월별 매출 테이블
+    # -------------------------
+    line_row = 30
+    ws.cell(row=line_row, column=1, value="월")
+    ws.cell(row=line_row, column=2, value="매출액")
 
     monthly = (
         df.groupby("month", as_index=False)
@@ -157,13 +175,14 @@ def build_monthly_report(df, vendors, start_month, end_month):
     line.add_data(data, titles_from_data=True)
     line.set_categories(cats)
 
-    ws.add_chart(line, "E11")
+    ws.add_chart(line, "A31")
 
-    # =========================
-    # 컬럼 너비 (들여쓰기 주의!)
-    # =========================
+    # -------------------------
+    # 컬럼 너비
+    # -------------------------
     for col in ["A","B","C","D","E","F","G","H"]:
         ws.column_dimensions[col].width = 22
+
 
 
     # =========================================================
