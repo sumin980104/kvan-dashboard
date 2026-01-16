@@ -78,7 +78,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.merge_cells(f"{col}5:{col}6")
         t = ws[f"{col}5"]
         t.value = title
-        t.font = header_font(bold=True, size=12)
+        t.font = Font(color="FFFFFF", bold=True, size=12)
         t.alignment = center
         t.fill = PatternFill("solid", fgColor=NAVY)
         t.border = soft_border
@@ -97,7 +97,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # =========================================================
     ws.merge_cells("A11:H11")
     ws["A11"] = "업체별 매출 분석"
-    ws["A11"].font = Font(bold=True, size=14)
+    ws["A11"].font = Font(bold=True, size=16)
+    ws["A11"].alignment = center
 
     base_row = 12
     vendor_sum = df.groupby("vendor", as_index=False).agg(
@@ -157,7 +158,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # =========================================================
     ws.merge_cells("A29:H29")
     ws["A29"] = "월별 매출 추이"
-    ws["A29"].font = Font(bold=True, size=14)
+    ws["A29"].font = Font(bold=True, size=16)
+    ws["A29"].alignment = center
 
     line_row = 30
     monthly = df.groupby("month", as_index=False).agg(
