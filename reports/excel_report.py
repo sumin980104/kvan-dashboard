@@ -92,96 +92,86 @@ def build_monthly_report(df, vendors, start_month, end_month):
         v.fill = PatternFill("solid", fgColor=WHITE)
         v.border = soft_border
 
-    # =========================================================
-    # 업체별 매출 분석
+        # =========================================================
+    # 업체별 매출 데이터
     # =========================================================
     ws.merge_cells("A11:H11")
     ws["A11"] = "업체별 매출 분석"
     ws["A11"].font = Font(bold=True, size=14)
 
-    table_row = 12
-    ws.cell(row=table_row, column=1, value="업체")
-    ws.cell(row=table_row, column=2, value="매출액")
-
-    vendor_total = (
-        df.groupby("vendor", as_index=False)
-        .agg(gross_sales=("gross_sales", "sum"))
+    base_row = 12
+    vendor_sum = df.groupby("vendor", as_index=False).agg(
+        gross_sales=("gross_sales", "sum")
     )
 
-    for i, r in vendor_total.iterrows():
-        ws.cell(row=table_row + 1 + i, column=1, value=r["vendor"])
-        ws.cell(row=table_row + 1 + i, column=2, value=r["gross_sales"]).number_format = "#,##0"
+    for i, r in vendor_sum.iterrows():
+        ws.cell(row=base_row + i, column=1, value=r["vendor"])
+        ws.cell(row=base_row + i, column=2, value=r["gross_sales"]).number_format = "#,##0"
 
-    data = Reference(ws, min_col=2, min_row=table_row + 1,
-                     max_row=table_row + len(vendor_total))
-    cats = Reference(ws, min_col=1, min_row=table_row + 1,
-                     max_row=table_row + len(vendor_total))
+    data = Reference(ws, min_col=2, min_row=base_row,
+                     max_row=base_row + len(vendor_sum) - 1)
+    cats = Reference(ws, min_col=1, min_row=base_row,
+                     max_row=base_row + len(vendor_sum) - 1)
 
-    # -------------------------
-    # Bar Chart (업체명 ↓ / 값 ↑)
-    # -------------------------
+    # =========================================================
+    # Bar Chart
+    # =========================================================
     bar = BarChart()
     bar.legend = None
     bar.y_axis.majorGridlines = None
     bar.width = 18
     bar.height = 8
 
-    # 🔹 데이터 추가 (제목 절대 포함 X)
     bar.add_data(data, titles_from_data=False)
-
-    # 🔹 카테고리 = 업체명 → 자동으로 X축(막대 아래)
     bar.set_categories(cats)
 
-    # 🔹 데이터 라벨 설정
     bar.dataLabels = DataLabelList()
-    bar.dataLabels.showVal = True        # 숫자만
-    bar.dataLabels.showCatName = False   # 업체명 ❌
-    bar.dataLabels.showSerName = False   # 계열1 ❌
-    bar.dataLabels.showLegendKey = False
+    bar.dataLabels.showVal = True
+    bar.dataLabels.showCatName = False
+    bar.dataLabels.showSerName = False
 
-    # -------------------------
-    # Pie Chart (업체명 + % + 값)
-    # -------------------------
+    ws.add_chart(bar, "A13")
+
+    # =========================================================
+    # Donut Chart
+    # =========================================================
     pie = PieChart()
+    pie.holeSize = 60
+    pie.legend = None
     pie.width = 18
     pie.height = 8
-    pie.legend = None
 
     pie.add_data(data, titles_from_data=False)
     pie.set_categories(cats)
 
     pie.dataLabels = DataLabelList()
-    pie.dataLabels.showCatName = True    # 업체명
-    pie.dataLabels.showPercent = True    # %
-    pie.dataLabels.showVal = True        # 값
-    pie.dataLabels.showSerName = False   # 계열1 ❌
+    pie.dataLabels.showCatName = True
+    pie.dataLabels.showPercent = True
+    pie.dataLabels.showVal = False
+    pie.dataLabels.showSerName = False
 
+    ws.add_chart(pie, "E13")
 
     # =========================================================
-    # 월별 매출 추이 
+    # 월별 매출 추이
     # =========================================================
     ws.merge_cells("A29:H29")
     ws["A29"] = "월별 매출 추이"
     ws["A29"].font = Font(bold=True, size=14)
 
     line_row = 30
-    ws.cell(row=line_row, column=1, value="월")
-    ws.cell(row=line_row, column=2, value="매출액")
-
-    monthly = (
-        df.groupby("month", as_index=False)
-        .agg(gross_sales=("gross_sales", "sum"))
-        .sort_values("month")
-    )
+    monthly = df.groupby("month", as_index=False).agg(
+        gross_sales=("gross_sales", "sum")
+    ).sort_values("month")
 
     for i, r in monthly.iterrows():
-        ws.cell(row=line_row + 1 + i, column=1, value=r["month"])
-        ws.cell(row=line_row + 1 + i, column=2, value=r["gross_sales"]).number_format = "#,##0"
+        ws.cell(row=line_row + i, column=1, value=r["month"])
+        ws.cell(row=line_row + i, column=2, value=r["gross_sales"]).number_format = "#,##0"
 
-    data_line = Reference(ws, min_col=2, min_row=line_row + 1,
-                          max_row=line_row + len(monthly))
-    cats_line = Reference(ws, min_col=1, min_row=line_row + 1,
-                          max_row=line_row + len(monthly))
+    data_line = Reference(ws, min_col=2, min_row=line_row,
+                          max_row=line_row + len(monthly) - 1)
+    cats_line = Reference(ws, min_col=1, min_row=line_row,
+                          max_row=line_row + len(monthly) - 1)
 
     line = LineChart()
     line.legend = None
@@ -189,13 +179,14 @@ def build_monthly_report(df, vendors, start_month, end_month):
     line.width = 36
     line.height = 12
 
+    line.x_axis.tickLblPos = "low"
+    line.y_axis.majorGridlines = None
+
     line.add_data(data_line, titles_from_data=False)
     line.set_categories(cats_line)
 
     line.dataLabels = DataLabelList()
     line.dataLabels.showVal = True
-    line.dataLabels.showCatName = False
-    line.dataLabels.showSerName = False
 
     for s in line.series:
         s.marker = Marker(symbol="circle", size=7)
@@ -203,8 +194,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     ws.add_chart(line, "A31")
 
     # 컬럼 너비
-    for col in ["A","B","C","D","E","F","G","H"]:
-        ws.column_dimensions[col].width = 22
+    for c in ["A","B","C","D","E","F","G","H"]:
+        ws.column_dimensions[c].width = 22
 
     # =========================================================
     # 3️⃣ 시트 : 업체별 월매출 (🔥 완전 수정 🔥)
