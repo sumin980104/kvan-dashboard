@@ -28,6 +28,9 @@ def build_monthly_report(df, vendors, start_month, end_month):
     thin = Side(style="thin", color=BORDER_GRAY)
     soft_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
+    header_fill = PatternFill("solid", fgColor=NAVY)
+    header_font = Font(color="FFFFFF", bold=True)
+
     # =========================================================
     # 1️⃣ Dashboard 시트
     # =========================================================
