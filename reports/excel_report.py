@@ -18,6 +18,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # =========================================================
     # 공통 스타일
     # =========================================================
+    NAVY = "1F2A44"    
     GRAY_BG = "F3F4F6"
     WHITE = "FFFFFF"
     BORDER_GRAY = "D1D5DB"
