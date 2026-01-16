@@ -34,9 +34,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
     ws = wb.active
     ws.title = "Dashboard"
 
-    # -------------------------
-    # 제목
-    # -------------------------
     ws.merge_cells("A1:H1")
     ws["A1"] = "해외부 매출 Dashboard"
     ws["A1"].font = Font(bold=True, size=22)
@@ -63,9 +60,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ("운행 건수", total_rides, "건"),
     ]
 
-    # -------------------------
-    # KPI 카드 (가로)
-    # -------------------------
     start_row = 4
     cols = ["A", "C", "E", "G"]
 
@@ -88,7 +82,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
         v.alignment = center
         v.border = soft_border
 
-    # 평균 건당 매출 (중앙 하단)
+    # 평균 건당 매출
     ws.merge_cells("C9:F10")
     ws.merge_cells("C11:F13")
 
@@ -129,93 +123,27 @@ def build_monthly_report(df, vendors, start_month, end_month):
         c2.alignment = right
         r += 1
 
-    # -------------------------
-    # 업체별 매출 Bar 차트
-    # -------------------------
+    # =========================================================
+    # 차트
+    # =========================================================
     bar = BarChart()
     bar.title = "업체별 매출 비교"
     bar.legend = None
-    bar.style = 10
-    bar.y_axis.majorGridlines = None
 
-    data = Reference(
-        ws,
-        min_col=2,
-        min_row=table_row,
-        max_row=table_row + len(vendor_total),
-    )
-    cats = Reference(
-        ws,
-        min_col=1,
-        min_row=table_row + 1,
-        max_row=table_row + len(vendor_total),
-    )
+    data = Reference(ws, min_col=2, min_row=table_row,
+                     max_row=table_row + len(vendor_total))
+    cats = Reference(ws, min_col=1, min_row=table_row + 1,
+                     max_row=table_row + len(vendor_total))
 
     bar.add_data(data, titles_from_data=True)
     bar.set_categories(cats)
     ws.add_chart(bar, "J4")
 
-    # -------------------------
-    # 업체별 매출 비중 Pie 차트
-    # -------------------------
     pie = PieChart()
     pie.title = "업체별 매출 비중"
-    pie.firstSliceAng = 270
     pie.add_data(data, titles_from_data=True)
     pie.set_categories(cats)
     ws.add_chart(pie, "J20")
-
-    # -------------------------
-    # 월별 매출 추이
-    # -------------------------
-    line_table_row = table_row + len(vendor_total) + 5
-    ws.cell(row=line_table_row, column=1, value="월").font = bold_font
-    ws.cell(row=line_table_row, column=2, value="총 매출액").font = bold_font
-
-    monthly = (
-        df.groupby("month", as_index=False)
-        .agg(gross_sales=("gross_sales", "sum"))
-        .sort_values("month")
-    )
-
-    r = line_table_row + 1
-    for _, row in monthly.iterrows():
-        ws.cell(row=r, column=1, value=row["month"])
-        c = ws.cell(row=r, column=2, value=row["gross_sales"])
-        c.number_format = "#,##0"
-        r += 1
-
-    line = LineChart()
-    line.title = "월별 매출 추이"
-    line.style = 13
-    line.smooth = True
-    line.legend = None
-    line.y_axis.majorGridlines = None
-
-    data = Reference(
-        ws,
-        min_col=2,
-        min_row=line_table_row,
-        max_row=line_table_row + len(monthly),
-    )
-    cats = Reference(
-        ws,
-        min_col=1,
-        min_row=line_table_row + 1,
-        max_row=line_table_row + len(monthly),
-    )
-
-    line.add_data(data, titles_from_data=True)
-    line.set_categories(cats)
-    ws.add_chart(line, "A18")
-
-    # =========================================================
-    # 컬럼 너비
-    # =========================================================
-    ws.column_dimensions["A"].width = 18
-    ws.column_dimensions["B"].width = 20
-    for col in ["C", "D", "E", "F", "G", "H"]:
-        ws.column_dimensions[col].width = 22
 
     # =========================================================
     # 3️⃣ 시트 : 업체별 월매출 (🔥 완전 수정 🔥)
