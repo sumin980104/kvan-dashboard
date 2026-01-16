@@ -187,6 +187,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     line.dataLabels = DataLabelList()
     line.dataLabels.showVal = True
+    line.dataLabels.showCatName = True
+    line.dataLabels.showSerName = False
 
     for s in line.series:
         s.marker = Marker(symbol="circle", size=7)
