@@ -26,13 +26,13 @@ def build_monthly_report(df, vendors, start_month, end_month):
     header_fill = PatternFill("solid", fgColor=NAVY)
     header_font = Font(color=WHITE, bold=True, size=12)
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    thin_border = Border(
-        left=Side(style="thin", color=BORDER_COLOR),
-        right=Side(style="thin", color=BORDER_COLOR),
-        top=Side(style="thin", color=BORDER_COLOR),
-        bottom=Side(style="thin", color=BORDER_COLOR)
-    )
-
+    # -------------------------------------------------------
+    # 테두리 설정 (이름을 두 개 다 정의하여 에러 방지)
+    # -------------------------------------------------------
+    side = Side(style="thin", color=BORDER_COLOR)
+    soft_border = Border(left=side, right=side, top=side, bottom=side)
+    thin_border = soft_border # 대시보드에서 사용하는 새 이름
+    # -------------------------------------------------------
     # =========================================================
     # 1️⃣ Dashboard 시트 생성 및 배경 설정
     # =========================================================
