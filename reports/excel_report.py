@@ -7,7 +7,6 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, PieChart, LineChart, Reference
 
-
 today_str = date.today().strftime("%Y-%m-%d")
 
 
@@ -18,7 +17,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # 공통 스타일
     # =========================================================
     NAVY = "1F2A44"
-    LIGHT_GRAY = "F3F4F6"
 
     header_fill = PatternFill("solid", fgColor=NAVY)
     header_font = Font(color="FFFFFF", bold=True)
@@ -28,9 +26,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     right = Alignment(horizontal="right", vertical="center")
 
     thin = Side(style="thin")
-    soft_border = Border(
-        left=thin, right=thin, top=thin, bottom=thin
-    )
+    soft_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
     # =========================================================
     # 1️⃣ Dashboard 시트 (대표님 보고용)
@@ -65,17 +61,16 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ("실 입금액", total_net, "원"),
         ("총 수수료", total_fee, "원"),
         ("운행 건수", total_rides, "건"),
-        ("평균 건당 매출", avg_unit, "원"),
     ]
 
     # -------------------------
     # KPI 카드 (가로)
     # -------------------------
     start_row = 4
-    col_positions = ["A", "C", "E", "G"]
+    cols = ["A", "C", "E", "G"]
 
-    for i, (title, value, unit) in enumerate(kpis[:4]):
-        col = col_positions[i]
+    for i, (title, value, unit) in enumerate(kpis):
+        col = cols[i]
 
         ws.merge_cells(f"{col}{start_row}:{col}{start_row+1}")
         ws.merge_cells(f"{col}{start_row+2}:{col}{start_row+4}")
@@ -85,13 +80,15 @@ def build_monthly_report(df, vendors, start_month, end_month):
         h.fill = header_fill
         h.font = header_font
         h.alignment = center
+        h.border = soft_border
 
         v = ws[f"{col}{start_row+2}"]
         v.value = f"{value:,.0f} {unit}"
         v.font = Font(bold=True, size=18, color=NAVY)
         v.alignment = center
+        v.border = soft_border
 
-    # 평균 건당 매출 (아래 중앙)
+    # 평균 건당 매출 (중앙 하단)
     ws.merge_cells("C9:F10")
     ws.merge_cells("C11:F13")
 
@@ -100,11 +97,13 @@ def build_monthly_report(df, vendors, start_month, end_month):
     h.fill = header_fill
     h.font = header_font
     h.alignment = center
+    h.border = soft_border
 
     v = ws["C11"]
     v.value = f"{avg_unit:,.0f} 원"
     v.font = Font(bold=True, size=20, color=NAVY)
     v.alignment = center
+    v.border = soft_border
 
     # =========================================================
     # 업체별 매출 집계 (차트용 데이터)
@@ -120,18 +119,24 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     r = table_row + 1
     for _, row in vendor_total.iterrows():
-        ws.cell(row=r, column=1, value=row["vendor"])
-        ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
+        c1 = ws.cell(row=r, column=1, value=row["vendor"])
+        c2 = ws.cell(row=r, column=2, value=row["gross_sales"])
+        c2.number_format = "#,##0"
+
+        c1.border = soft_border
+        c2.border = soft_border
+        c1.alignment = center
+        c2.alignment = right
         r += 1
 
-    # =========================================================
-    # 업체별 매출 비교 (Bar)
-    # =========================================================
+    # -------------------------
+    # 업체별 매출 Bar 차트
+    # -------------------------
     bar = BarChart()
     bar.title = "업체별 매출 비교"
-    bar.y_axis.title = "매출액"
     bar.legend = None
     bar.style = 10
+    bar.y_axis.majorGridlines = None
 
     data = Reference(
         ws,
@@ -148,26 +153,21 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     bar.add_data(data, titles_from_data=True)
     bar.set_categories(cats)
-    bar.y_axis.majorGridlines = None
-
     ws.add_chart(bar, "J4")
 
-    # =========================================================
-    # 업체별 매출 비중 (Pie)
-    # =========================================================
+    # -------------------------
+    # 업체별 매출 비중 Pie 차트
+    # -------------------------
     pie = PieChart()
     pie.title = "업체별 매출 비중"
     pie.firstSliceAng = 270
-    pie.varyColors = True
-
     pie.add_data(data, titles_from_data=True)
     pie.set_categories(cats)
-
     ws.add_chart(pie, "J20")
 
-    # =========================================================
-    # 월별 매출 추이 (Line)
-    # =========================================================
+    # -------------------------
+    # 월별 매출 추이
+    # -------------------------
     line_table_row = table_row + len(vendor_total) + 5
     ws.cell(row=line_table_row, column=1, value="월").font = bold_font
     ws.cell(row=line_table_row, column=2, value="총 매출액").font = bold_font
@@ -181,7 +181,8 @@ def build_monthly_report(df, vendors, start_month, end_month):
     r = line_table_row + 1
     for _, row in monthly.iterrows():
         ws.cell(row=r, column=1, value=row["month"])
-        ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
+        c = ws.cell(row=r, column=2, value=row["gross_sales"])
+        c.number_format = "#,##0"
         r += 1
 
     line = LineChart()
@@ -206,7 +207,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
 
     line.add_data(data, titles_from_data=True)
     line.set_categories(cats)
-
     ws.add_chart(line, "A18")
 
     # =========================================================
@@ -216,7 +216,6 @@ def build_monthly_report(df, vendors, start_month, end_month):
     ws.column_dimensions["B"].width = 20
     for col in ["C", "D", "E", "F", "G", "H"]:
         ws.column_dimensions[col].width = 22
-
 
     # =========================================================
     # 3️⃣ 시트 : 업체별 월매출 (🔥 완전 수정 🔥)
