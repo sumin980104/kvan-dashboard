@@ -109,43 +109,51 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
         r += 1
 
+    
+    data = Reference(
+        ws,
+        min_col=2,
+        min_row=table_row + 1,
+        max_row=table_row + len(vendor_total)
+    )
+    cats = Reference(
+        ws,
+        min_col=1,
+        min_row=table_row + 1,
+        max_row=table_row + len(vendor_total)
+    )
+
     # -------------------------
-    # Bar Chart
+    # Bar Chart (업체명 아래 / 숫자 위)
     # -------------------------
     bar = BarChart()
     bar.title = "업체별 매출 비교"
     bar.legend = None
-    bar.y_axis.majorGridlines = None
     bar.style = 10
-    
+    bar.y_axis.majorGridlines = None
+    bar.width = 18
+    bar.height = 8
 
     bar.dataLabels = DataLabelList()
-    bar.dataLabels.showVal = True
+    bar.dataLabels.showVal = True      # ✅ 숫자만
     bar.dataLabels.showCatName = False
     bar.dataLabels.showSerName = False
 
-    bar.add_data(data, titles_from_data=True)
+    bar.add_data(data, titles_from_data=False)
     bar.set_categories(cats)
 
     ws.add_chart(bar, "A13")
 
     # -------------------------
-    # Pie Chart
+    # Pie Chart (텍스트 최소화)
     # -------------------------
     pie = PieChart()
     pie.title = "업체별 매출 비중"
-    pie.add_data(data, titles_from_data=True)
+    pie.add_data(data, titles_from_data=False)
     pie.set_categories(cats)
+    pie.legend.position = "r"
 
     ws.add_chart(pie, "E13")
-
-    # -------------------------
-    # 섹션 타이틀 : 월별 추이
-    # -------------------------
-    ws.merge_cells("A29:H29")
-    ws["A29"] = "📈 월별 매출 추이"
-    ws["A29"].font = Font(bold=True, size=14)
-    ws["A29"].alignment = Alignment(horizontal="left", vertical="center")
 
     # -------------------------
     # 월별 매출 테이블
@@ -166,22 +174,43 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
         r += 1
 
+    data_line = Reference(
+        ws,
+        min_col=2,
+        min_row=line_row + 1,
+        max_row=line_row + len(monthly)
+    )
+    cats_line = Reference(
+        ws,
+        min_col=1,
+        min_row=line_row + 1,
+        max_row=line_row + len(monthly)
+    )
+
+    # -------------------------
+    # Line Chart (혼자 커짐 / 점 + 값 표시)
+    # -------------------------
     line = LineChart()
     line.title = "월별 매출 추이"
     line.smooth = True
     line.legend = None
     line.y_axis.majorGridlines = None
+    line.width = 36    # ✅ 단독이라 크게
+    line.height = 12
 
-    data = Reference(ws, min_col=2, min_row=line_row,
-                    max_row=line_row + len(monthly))
-    cats = Reference(ws, min_col=1, min_row=line_row + 1,
-                    max_row=line_row + len(monthly))
+    line.dataLabels = DataLabelList()
+    line.dataLabels.showVal = True
+    line.dataLabels.showCatName = False
+    line.dataLabels.showSerName = False
 
-    line.add_data(data, titles_from_data=True)
-    line.set_categories(cats)
+    line.add_data(data_line, titles_from_data=False)
+    line.set_categories(cats_line)
+
+    # ✅ 점(동그라미) 표시
+    for s in line.series:
+        s.marker = Marker(symbol="circle", size=7)
 
     ws.add_chart(line, "A31")
-
     # -------------------------
     # 컬럼 너비
     # -------------------------
