@@ -83,9 +83,17 @@ def build_monthly_report(df, vendors, start_month, end_month):
         c.fill = PatternFill("solid", fgColor="FFFFFF")
         c.border = soft_border
 
-    # =========================================================
-    # 업체별 매출 데이터 (차트용)
-    # =========================================================
+    # -------------------------
+    # 섹션 타이틀 : 업체 분석
+    # -------------------------
+    ws.merge_cells("A11:H11")
+    ws["A11"] = "📊 업체별 매출 분석"
+    ws["A11"].font = Font(bold=True, size=14)
+    ws["A11"].alignment = Alignment(horizontal="left", vertical="center")
+
+    # -------------------------
+    # 업체별 매출 집계 (차트용)
+    # -------------------------
     table_row = 12
     ws.cell(row=table_row, column=1, value="업체")
     ws.cell(row=table_row, column=2, value="매출액")
@@ -101,44 +109,47 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
         r += 1
 
-    data = Reference(ws, min_col=2, min_row=table_row + 1, max_row=table_row + len(vendor_total))
-    cats = Reference(ws, min_col=1, min_row=table_row + 1, max_row=table_row + len(vendor_total))
-
-    # =========================================================
-    # 2️⃣ 업체별 매출 비교 (Bar)
-    # =========================================================
+    # -------------------------
+    # Bar Chart
+    # -------------------------
     bar = BarChart()
     bar.title = "업체별 매출 비교"
     bar.legend = None
-    bar.style = 10
-    bar.width = 18
-    bar.height = 9
     bar.y_axis.majorGridlines = None
+    bar.style = 10
+    
 
     bar.dataLabels = DataLabelList()
     bar.dataLabels.showVal = True
     bar.dataLabels.showCatName = False
     bar.dataLabels.showSerName = False
 
-    bar.add_data(data, titles_from_data=False)
+    bar.add_data(data, titles_from_data=True)
     bar.set_categories(cats)
 
     ws.add_chart(bar, "A13")
 
-    # =========================================================
-    # 3️⃣ 업체별 매출 비중 (Pie)
-    # =========================================================
+    # -------------------------
+    # Pie Chart
+    # -------------------------
     pie = PieChart()
     pie.title = "업체별 매출 비중"
-    pie.add_data(data, titles_from_data=False)
+    pie.add_data(data, titles_from_data=True)
     pie.set_categories(cats)
-    pie.legend.position = "r"
 
     ws.add_chart(pie, "E13")
 
-    # =========================================================
-    # 월별 매출 데이터
-    # =========================================================
+    # -------------------------
+    # 섹션 타이틀 : 월별 추이
+    # -------------------------
+    ws.merge_cells("A29:H29")
+    ws["A29"] = "📈 월별 매출 추이"
+    ws["A29"].font = Font(bold=True, size=14)
+    ws["A29"].alignment = Alignment(horizontal="left", vertical="center")
+
+    # -------------------------
+    # 월별 매출 테이블
+    # -------------------------
     line_row = 30
     ws.cell(row=line_row, column=1, value="월")
     ws.cell(row=line_row, column=2, value="매출액")
@@ -155,30 +166,19 @@ def build_monthly_report(df, vendors, start_month, end_month):
         ws.cell(row=r, column=2, value=row["gross_sales"]).number_format = "#,##0"
         r += 1
 
-    data_line = Reference(ws, min_col=2, min_row=line_row + 1, max_row=line_row + len(monthly))
-    cats_line = Reference(ws, min_col=1, min_row=line_row + 1, max_row=line_row + len(monthly))
-
-    # =========================================================
-    # 4️⃣ 월별 매출 추이 (Line / 단독 크게)
-    # =========================================================
     line = LineChart()
     line.title = "월별 매출 추이"
     line.smooth = True
     line.legend = None
-    line.width = 36
-    line.height = 12
     line.y_axis.majorGridlines = None
 
-    line.dataLabels = DataLabelList()
-    line.dataLabels.showVal = True
-    line.dataLabels.showCatName = False
-    line.dataLabels.showSerName = False
+    data = Reference(ws, min_col=2, min_row=line_row,
+                    max_row=line_row + len(monthly))
+    cats = Reference(ws, min_col=1, min_row=line_row + 1,
+                    max_row=line_row + len(monthly))
 
-    line.add_data(data_line, titles_from_data=False)
-    line.set_categories(cats_line)
-
-    for s in line.series:
-        s.marker = Marker(symbol="circle", size=7)
+    line.add_data(data, titles_from_data=True)
+    line.set_categories(cats)
 
     ws.add_chart(line, "A31")
 
@@ -187,6 +187,7 @@ def build_monthly_report(df, vendors, start_month, end_month):
     # -------------------------
     for col in ["A","B","C","D","E","F","G","H"]:
         ws.column_dimensions[col].width = 22
+
 
 
     # =========================================================
